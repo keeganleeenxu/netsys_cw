@@ -4,7 +4,7 @@ from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.util import dumpNodeConnections
 from mininet.cli import CLI
-
+from mininet.node import OVSController
 
 class part1_topo(Topo):
     def build(self):
@@ -23,7 +23,7 @@ topos = {"part1": part1_topo}
 
 if __name__ == "__main__":
     t = part1_topo()
-    net = Mininet(topo=t)
+    net = Mininet(topo=t, controller=OVSController)
     net.start()
     CLI(net)
     net.stop()
