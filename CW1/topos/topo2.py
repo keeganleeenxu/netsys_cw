@@ -31,7 +31,7 @@ def configure():
     # Here, Pox controller uses OpenFlow port 6633
     net = Mininet(topo=topo, controller=RemoteController(name="pox", port=6633))
     net.start()
-    net.staticArp() # Comment out for part 3
+    # net.staticArp() # Comment out for part 3
 
     CLI(net)
 

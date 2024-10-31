@@ -1,0 +1,86 @@
+# Networked Systems Coursework 1
+
+## Task 1
+
+1. Modify topo1.py to create four hosts (h1-h4) connected to the same switch.
+2. Run `h1 ping h4`, `iperf h1 h4`, `dump`, and `pingall`.
+
+### Solutions
+1. `topo1.py` can be found in the `.zip` file
+2. Below are images evidencing the running of the commands in the topo1 network topology
+
+<figure>
+  <img src="images/task1/h1_ping_h4.png">
+  <figcaption><center>Fig 1.1: Running <code>h1 ping h4</code></figcaption>
+</figure>
+
+<figure>
+  <img src="images/task1/iperf_h1_h4.png">
+  <figcaption><center>Fig 1.2: Running <code>iperf h1 h4</code></figcaption>
+</figure>
+
+<figure>
+  <img src="images/task1/dump.png">
+  <figcaption><center>Fig 1.3: Running <code>dump</code></figcaption>
+</figure>
+
+<figure>
+  <img src="images/task1/pingall.png">
+  <figcaption><center>Fig 1.4: Running <code>pingall</code></figcaption>
+</figure>
+
+## Task 2
+
+1. Run `h1 ping h4`.
+2. Run `dpctl dump-flows` and inspect the rules the controller installed. Provide screenshots in your report.
+3. Briefly explain how `l2_learning.py` works. 
+4. When you run h1 ping h4 is there any chance you receive an ICMP packet in h2? Explain your answer.
+
+### Solutions
+
+<figure>
+  <img src="images/task2/h1_ping_h4.png">
+  <figcaption><center>Fig 2.1: Running <code>h1 ping h4</code></figcaption>
+</figure>
+
+1. Above is the console log when `h1 ping h4` is run.
+2. Below is console log when `dpctl dump-flows` is run.
+
+<figure>
+  <img src="images/task2/dpctl_dump-flows.png">
+  <figcaption><center>Fig 2.2: Running <code>dpctl dump-flows</code></figcaption>
+</figure>
+
+3. The general idea of the learning switch is to dynamically 'learn' and build up a MAC address-to-port mapping table to decide where to forward incoming packets based on a source and destination MAC address. 
+
+The process can be split into several phases:
+* **Learning Phase**: The switch observes which port a source MAC address is received at and populates the mapping table with this relation.
+
+* **Forwarding Logic**: If the destination MAC address is present in the mapping table, the switch will forward the packet through the associated port. However, if the destination MAC address is unknown, the switch will flood the packet across all channels to ensure the packet has reached its destination.
+
+* **Dropping Rules**: For certain types of traffic (link-local or if the destination address is Bridge Filtered), the switch will drop the packets associated. The switch also conducts a sanity check ensuring that packets with the same source and destination addresses are dropped temporarily as it suggests there to be an error or loop in the network.
+
+* **OpenFlow Rule Set-Up**: Once a packet flow (Source MAC <-> Input Port <-> Destination MAC) is learnt by the switch, the program leverages OpenFlow table by installing a flow rule for that specific flow. This allows for traffic to be automatically forwarded without the involvement of the controller. If the rule is unused for a period of 10s, the rule is discarded. Similarly, after a fixed period of 30s, the installed rule is removed.
+
+4. There is no chance for `h1 ping h4` to cause ICMP packets to reach `h2`. The reasoning behind this is that as `h1` pings `h4`, once the initial ARP request is complete and `h4`'s MAC address is known, the controller ensures that subsequent ICMP packets will only be directed to `h4`'s port. Therefore, `h2` will never receive any ICMP packets destined for `h4` from `h1`
+
+## Task 3
+
+1. Run `pingall`. `h1` and `h4` should be able to ping each other and `h2` and `h3` as well. Provide screenshots in your report.
+2. Run `dpctl dump-flows` to see the rules you inserted. Provide the equivalent screenshot.
+
+### Solutions
+
+<figure>
+  <img src="images/task3/pingall.png">
+  <figcaption><center>Fig 3.1: Running <code>pingall</code></figcaption>
+</figure>
+
+1. Above is the result of runing `pingall` with the new OpenFlow rules. We can observe that the new rules enable `h1` to reach `h4` and `h2` to reach `h3`.
+
+2. Below is the result of running `dpctl_dump-flows` which shows the rules inserted in the switch. We can observe the three separate rules for ARP, ICMP and the rest of the traffic. Noting that ARP is given the highest priority to flood the network, followed by ICMP and then the catch-all rule to drop all other packets.
+
+<figure>
+  <img src="images/task3/dpctl_dump-flows.png">
+  <figcaption><center>Fig 3.2: Running <code>dpctl_dump-flows</code></figcaption>
+</figure>
